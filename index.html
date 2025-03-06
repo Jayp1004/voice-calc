@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+</head>
+<body class="bg-zinc-100 dark:bg-blue-900 transition-colors duration-500">
+
+<div class="min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full mx-4 bg-white dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden p-6">
+        <p id="display-equation" class="text-center text-lg font-semibold text-zinc-800 dark:text-zinc-200">Say a Calculation</p>
+        <p id="display-result" class="text-center text-3xl font-bold text-zinc-900 dark:text-zinc-100">0</p>
+
+        <button id="mic-button" class="w-16 h-16 mx-auto mt-4 bg-blue-500 dark:bg-green-500 text-white rounded-full flex items-center justify-center shadow-md">
+            🎤
+        </button>
+
+        <div class="grid grid-cols-4 gap-1 p-4">
+            <button class="calc-btn">7</button>
+            <button class="calc-btn">8</button>
+            <button class="calc-btn">9</button>
+            <button class="calc-btn">/</button>
+            <button class="calc-btn">4</button>
+            <button class="calc-btn">5</button>
+            <button class="calc-btn">6</button>
+            <button class="calc-btn">*</button>
+            <button class="calc-btn">1</button>
+            <button class="calc-btn">2</button>
+            <button class="calc-btn">3</button>
+            <button class="calc-btn">-</button>
+            <button class="calc-btn">C</button>
+            <button class="calc-btn">0</button>
+            <button class="calc-btn">=</button>
+            <button class="calc-btn">+</button>
+        </div>
+
+        <div class="flex items-center justify-center p-4">
+            <span class="text-zinc-600 dark:text-zinc-300 mr-2">Light</span>
+            <label for="modeToggle" class="flex items-center cursor-pointer">
+                <input type="checkbox" id="modeToggle" class="hidden">
+                <div class="w-10 h-5 bg-zinc-300 dark:bg-zinc-600 rounded-full relative transition"></div>
+                <div class="w-6 h-6 bg-white dark:bg-zinc-400 rounded-full shadow-md absolute top-0 left-0 transition-transform"></div>
+            </label>
+            <span class="text-zinc-600 dark:text-zinc-300 ml-2">Dark</span>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const displayEquation = document.getElementById("display-equation");
+    const displayResult = document.getElementById("display-result");
+    const micButton = document.getElementById("mic-button");
+    const modeToggle = document.getElementById("modeToggle");
+    const calculatorButtons = document.querySelectorAll(".calc-btn");
+
+    let equation = "";
+    let isListening = false;
+
+    // Speech Recognition Setup
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("Speech Recognition is not supported in this browser. Please use Google Chrome.");
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    micButton.addEventListener("click", () => {
+        if (!isListening) {
+            recognition.start();
+            isListening = true;
+            micButton.classList.add("animate-pulse");
+        }
+    });
+
+    recognition.onresult = (event) => {
+        isListening = false;
+        micButton.classList.remove("animate-pulse");
+        recognition.stop();
+        const transcript = event.results[0][0].transcript;
+        equation = transcript.replace(/plus/g, "+")
+                            .replace(/minus/g, "-")
+                            .replace(/times/g, "*")
+                            .replace(/divided by/g, "/");
+        displayEquation.textContent = equation;
+        calculateResult();
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        isListening = false;
+        micButton.classList.remove("animate-pulse");
+    };
+
+    // Handle Button Clicks
+    calculatorButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const value = button.textContent;
+            if (value === "C") {
+                equation = "";
+                displayResult.textContent = "0";
+            } else if (value === "=") {
+                calculateResult();
+            } else {
+                equation += value;
+            }
+            displayEquation.textContent = equation;
+        });
+    });
+
+    function calculateResult() {
+        try {
+            const result = eval(equation);
+            displayResult.textContent = result;
+        } catch (error) {
+            displayResult.textContent = "Error";
+        }
+    }
+
+    // Dark Mode Toggle Fix
+    modeToggle.addEventListener("change", () => {
+        if (modeToggle.checked) {
+            document.documentElement.classList.add("dark");
+            localStorage.setItem("theme", "dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+            localStorage.setItem("theme", "light");
+        }
+    });
+
+    // Load Theme Preference
+    if (localStorage.getItem("theme") === "dark") {
+        document.documentElement.classList.add("dark");
+        modeToggle.checked = true;
+    }
+});
+</script>
+
+</body>
+</html>
